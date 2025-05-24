@@ -34,15 +34,9 @@ def preprocess(text: str, stop_words: set[str], stemmer: SnowballStemmer) -> str
     tokens = [stemmer.stem(word) for word in tokens if word not in stop_words]
     return ' '.join(tokens)
 
-def load_batch(path: Path) -> torch.Tensor:
-    """
-    Reads one *.npy file produced by np.save(dict, allow_pickle=True)
-    and returns a tensor of shape (seq_len, d_model).
-    """
-    # np.save(dict) -> 0-d object array, so we need .item()
+def load_matrix_batch(path: Path) -> torch.Tensor:
     emb_dict = np.load(path, allow_pickle=True).item()
-    # values() are already float32 numpy arrays of length d_model (512 for distiluse)
-    emb_matrix = np.stack(list(emb_dict.values()))        # (seq_len, d_model)
+    emb_matrix = np.stack(list(emb_dict.values()))
     return torch.from_numpy(emb_matrix).float()   
 
 @app.command
@@ -157,7 +151,7 @@ def transformer_model(
         batch_files = sorted(batches_dir.glob("docs_*.npy"))
 
     for f in batch_files:
-        x = load_batch(f).unsqueeze(0).to(device)
+        x = load_matrix_batch(f).unsqueeze(0).to(device)
         with torch.no_grad():
             output = model(x)
         print(f"{f.name}: {x.shape} -> {output.shape}")
