@@ -9,6 +9,8 @@ from nltk.corpus import stopwords
 import ir_datasets
 import numpy as np
 from tqdm.auto import tqdm
+import torch
+import torch.nn as nn
 
 app = App()
 
@@ -31,6 +33,17 @@ def preprocess(text: str, stop_words: set[str], stemmer: SnowballStemmer) -> str
     tokens = [word.lower() for word in word_tokenize(text) if word.isalpha()] 
     tokens = [stemmer.stem(word) for word in tokens if word not in stop_words]
     return ' '.join(tokens)
+
+def load_batch(path: Path) -> torch.Tensor:
+    """
+    Reads one *.npy file produced by np.save(dict, allow_pickle=True)
+    and returns a tensor of shape (seq_len, d_model).
+    """
+    # np.save(dict) -> 0-d object array, so we need .item()
+    emb_dict = np.load(path, allow_pickle=True).item()
+    # values() are already float32 numpy arrays of length d_model (512 for distiluse)
+    emb_matrix = np.stack(list(emb_dict.values()))        # (seq_len, d_model)
+    return torch.from_numpy(emb_matrix).float()   
 
 @app.command
 def create_embedding(
@@ -97,6 +110,57 @@ def create_embedding(
 
     progress.close()
     print(f"Embeddings saved to {out_dir}")
+
+@app.command
+def transformer_model(
+    d_model: int=512, 
+    nhead: int=8, 
+    dropout: float=0.1, 
+    batch_first: bool=True, 
+    num_layers: int=6,
+    batches_dir: Path=Path("batches"),
+    device: str="cpu"
+):
+    """Creates a dummy transformer model and runs it on the embeddings.
+    
+    Parameters
+    ----------
+    d_model: int, optional
+        Dimension of the model (default is 512).
+    nhead: int, optional
+        Number of attention heads (default is 8).
+    dropout: float, optional
+        Dropout rate (default is 0.1).
+    batch_first: bool, optional
+        If True, the input and output tensors are provided as (batch, seq, feature) (default is True).
+    num_layers: int, optional
+        Number of layers in the transformer encoder (default is 6).
+    batches_dir: Path, optional
+        Directory where the embedding batches are stored (default is "batches").
+    """
+
+    transformerEncoderLayer = nn.TransformerEncoderLayer(
+        d_model=d_model, 
+        nhead=nhead,
+        dim_feedforward=d_model * 4, 
+        dropout=dropout,
+        batch_first=batch_first)
+    
+    model = nn.TransformerEncoder(
+        transformerEncoderLayer, 
+        num_layers=num_layers).to(device).eval()
+
+    batch_files = sorted(batches_dir.glob("docs_*.npy"))
+
+    if not batch_files:
+        create_embedding()
+        batch_files = sorted(batches_dir.glob("docs_*.npy"))
+
+    for f in batch_files:
+        x = load_batch(f).unsqueeze(0).to(device)
+        with torch.no_grad():
+            output = model(x)
+        print(f"{f.name}: {x.shape} -> {output.shape}")
 
 @app.default
 def main():
