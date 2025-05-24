@@ -1,0 +1,28 @@
+[project]
+name = "TransMultiRank"
+authors = [
+    {name = "Bohdan Babii", email = "bohdanbabii@protonmail.com"}
+]
+description = "Transformer for Multi-Task Ranking"
+version = "0.0.1"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "numpy",
+    "sentence-transformers",
+    "ir_datasets",
+    "cyclopts",
+    "tqdm",
+    "nltk",
+    "torch"
+]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project.scripts]
+transmultirank = "TransMultiRank.cli:app"
+
+[tool.setuptools.packages.find]
+include = ["TransMultiRank", "TransMultiRank.*"]
