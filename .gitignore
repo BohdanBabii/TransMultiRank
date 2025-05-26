@@ -3,3 +3,5 @@ __pycache__/
 *.pyc
 TransMultiRank.egg-info/
 cli.txt
+.mypy_cache/
+venv

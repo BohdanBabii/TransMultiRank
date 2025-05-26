@@ -23,7 +23,7 @@ A Transformer for document ranking.
 Run the CLI with:
 
 ```shell
-transmultirank --help
+transmultirankpy --help
 ```
 
 # Development

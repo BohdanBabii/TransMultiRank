@@ -1,11 +1,10 @@
 from pathlib import Path
 from itertools import islice
 from cyclopts import App
-from cyclopts import run
 from sentence_transformers import SentenceTransformer
-from nltk.tokenize import word_tokenize
-from nltk.stem import SnowballStemmer
-from nltk.corpus import stopwords
+# from nltk.tokenize import word_tokenize
+# from nltk.stem import SnowballStemmer
+# from nltk.corpus import stopwords
 import ir_datasets
 import numpy as np
 from tqdm.auto import tqdm
@@ -14,7 +13,7 @@ import torch.nn as nn
 
 app = App()
 
-def getIterator(dataset: str, kind: str):
+def get_iterator(dataset: str, kind: str):
     ds = ir_datasets.load(dataset)
     match kind:
         case "docs":
@@ -29,10 +28,10 @@ def getIterator(dataset: str, kind: str):
             raise ValueError(f" ds_kind must be one of docs|queries|qrels|scoreddocs, got {ds_kind}.")
     
     
-def preprocess(text: str, stop_words: set[str], stemmer: SnowballStemmer) -> str:
-    tokens = [word.lower() for word in word_tokenize(text) if word.isalpha()] 
-    tokens = [stemmer.stem(word) for word in tokens if word not in stop_words]
-    return ' '.join(tokens)
+# def preprocess(text: str, stop_words: set[str], stemmer: SnowballStemmer) -> str:
+#     tokens = [word.lower() for word in word_tokenize(text) if word.isalpha()] 
+#     tokens = [stemmer.stem(word) for word in tokens if word not in stop_words]
+#     return ' '.join(tokens)
 
 def load_matrix_batch(path: Path) -> torch.Tensor:
     emb_dict = np.load(path, allow_pickle=True).item()
@@ -71,14 +70,15 @@ def create_embedding(
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    stop_words = set(stopwords.words('english'))
-    stemmer = SnowballStemmer("english")
+    # Not necessary
+    # stop_words = set(stopwords.words('english'))
+    # stemmer = SnowballStemmer("english")
     
     if ds_kind not in {"docs", "queries", "qrels", "screddocs"}:
         raise ValueError(f" ds_kind must be one of docs|queries|qrels|scoreddocs, got {ds_kind}.")
     
     model = SentenceTransformer(model_name)
-    ds_iter = getIterator(dataset, ds_kind)
+    ds_iter = get_iterator(dataset, ds_kind)
 
     print(
         f"model: {model_name}\n"
@@ -98,7 +98,7 @@ def create_embedding(
     #   - Add support for different models
     #   - Add support for different preprocessing methods
     for batch_idx, chunk in enumerate(iter(lambda:list(islice(iterator, batch_size)), [])):
-        processed = {item.doc_id: model.encode(preprocess(item.text,  stop_words, stemmer)) for item in chunk}
+        processed = {item.doc_id: model.encode(item.text) for item in chunk}
         np.save(out_dir / f"{ds_kind}_{batch_idx}.npy", processed, allow_pickle=True)
         progress.update(len(chunk))
 
