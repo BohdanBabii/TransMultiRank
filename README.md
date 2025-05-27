@@ -2,7 +2,7 @@
 
 A Transformer for document ranking.
 
-# Installation
+## Installation
 
 1. Install [Python 3.11](https://python.org/downloads/).
 2. Create and activate a virtual environment:
@@ -18,7 +18,7 @@ A Transformer for document ranking.
    pip install -e .
    ```
 
-# Usage
+## Usage
 
 Run the CLI with:
 
@@ -26,10 +26,10 @@ Run the CLI with:
 transmultirankpy --help
 ```
 
-# Development
+## Development
 
-# Contribute
+## Contribute
 
-# License
+## License
 
 This repository is released under the [MIT license](LICENSE)
