@@ -1,4 +1,4 @@
-# TransMultiRank
+# transformer-doc-ranker
 
 A Transformer for document ranking.
 
